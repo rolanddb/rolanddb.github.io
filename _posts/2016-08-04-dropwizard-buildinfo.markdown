@@ -205,3 +205,6 @@ $ curl localhost:7575/admin/meta
 }
 ```
 
+Note that Implementation-Version contains the SHA hash that refers to the Git revision that lead to this build.
+
+
