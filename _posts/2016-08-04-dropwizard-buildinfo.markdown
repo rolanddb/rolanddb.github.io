@@ -6,7 +6,7 @@ categories: java dropwizard
 ---
 # Exposing metadata from the jar manifest in Web Service
 
-In my current job I've chosen to develop as a continuous delivery process - meaning every build is a artifact that can potentially be deployed to production. Therefore we do not version our software anymore - we stick to the snapshots. The question arises - how do we keep track of what is deployed to production? This happens a lot, so doing this manually is cumbersome and prone to errors. 
+In my current job we develop as a continuous delivery process - meaning every build is a artifact that can potentially be deployed to production. Therefore we do not version our software anymore - we stick to the snapshots. The question arises - how do we keep track of what is deployed to production? Deployment happens a lot (i.e. daily), so doing this manually is cumbersome and prone to errors. 
 
 I know that Jenkins has a fingerprint ability (you can upload a jar file and it will tell you which build it is) but this seems like a lot of work. We have almost a dozen microservices running. What I was looking for was some kind of dashboard that tells me for every service what version it is.
 
@@ -82,7 +82,7 @@ inspectjar() {
 ```
 
 ## 2. Exposing the manifest
-The first thing to do is find out how we can read this manifest programatically. It appears that this is not trivial - your jar will also contain its dependent jar files. Each embedded jar will also contain a Manifest, and there seems to be no easy way to find the Manifest that we are looking for. So you end up looping through all manifests to find the right manifest. After some time spend on Stackoverflow [1](http://stackoverflow.com/questions/1272648/reading-my-own-jars-manifest) [2](http://stackoverflow.com/questions/7807782/is-there-any-way-to-access-the-name-value-pairs-of-a-manifest-mf-from-the-enclos?rq=1)
+Now that the .jar file contains the metadata, the next step is to read this manifest programatically. It appears that this is not trivial - your jar will also contain its dependent jar files. Each embedded jar will also contain a Manifest, and there seems to be no easy way to find the Manifest that we are looking for. So you end up looping through all manifests to find the right manifest. After some time spend on Stackoverflow [1](http://stackoverflow.com/questions/1272648/reading-my-own-jars-manifest) [2](http://stackoverflow.com/questions/7807782/is-there-any-way-to-access-the-name-value-pairs-of-a-manifest-mf-from-the-enclos?rq=1)
 [3](http://stackoverflow.com/questions/37654184/programmatically-read-manifest-mf-from-jar-in-an-ear) I've settled on using [JCabi](http://manifests.jcabi.com) which is a small library that does exactly what I want. I suppose that under the hood it does roughly the same as the suggested solutions on Stackoverflow, but at least I didn't reinvent the wheel.
 
 Using JCabi is easy:
@@ -94,7 +94,7 @@ It seemed reasonable (and more flexible) to me to just expose the entire Manifes
 
 
 {% highlight java %}
-package com.mysensara.resources;
+package com.mycompany.resources;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -134,7 +134,7 @@ Unfortunately, it turns out this is not so easy ([see Stackoverflow](http://stac
 At this point you can ask yourself whether you really need a full blown javax.ws resource, or whether a simple servlet will do. I decided that a servlet is just fine, and we can register that directly on the AdminEnvironment. We can reuse the Jackson ObjectMapper from the Dropwizard runtime for the Json serialization. The code for the servlet:
 
 {% highlight java %}
-package com.mysensara;
+package com.mycompany;
 
 import java.io.IOException;
 import java.io.PrintWriter;
