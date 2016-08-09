@@ -1,6 +1,6 @@
 name: Roland de Boo
 markdown: kramdown
-highlighter: pygments
+highlighter: rouge
 #github: https://www.github.com/rolanddb
 about: I am senior software engineer from Rotterdam, the Netherlands.
 urls:
