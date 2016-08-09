@@ -1,5 +1,5 @@
 name: Roland de Boo
-markdown: redcarpet
+markdown: kramdown
 highlighter: pygments
 #github: https://www.github.com/rolanddb
 about: I am senior software engineer from Rotterdam, the Netherlands.
