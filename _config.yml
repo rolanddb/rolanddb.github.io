@@ -1,2 +1,12 @@
-	name: Roland de Boo
-	markdown: kramdown
+name: Roland de Boo
+markdown: redcarpet
+highlighter: pygments
+#github: https://www.github.com/rolanddb
+about: I am senior software engineer from Rotterdam, the Netherlands.
+urls:
+    - text: GitHub
+      url: https://github.com/rolanddb
+    - text: LinkedIn
+      url: https://nl.linkedin.com/in/rolanddeboo
+      
+baseurl: ''

@@ -1,14 +1,12 @@
 ---
 layout: default
-title: Roland de Boo
 ---
-<div>
-<h1>Roland de Boo</h1>
-<ul>
-  <li><a href="https://nl.linkedin.com/in/rolanddeboo">LinkedIn</a></li>
-  <li><a href="https://github.com/rolanddb">GitHub</a></li>
-  <li><a href="http://www.mysensara.com">Sensara</a> (current employer)</li>
 
-</ul>
+<div id="home">
+  <h1>Blog Posts</h1>
+  <ul class="posts">
+    {% for post in site.posts %}
+      <li><span>{{ post.date | date_to_string }}</span> &raquo; <a href="{{ site.baseurl }}{{ post.url }}">{{ post.title }}</a></li>
+    {% endfor %}
+  </ul>
 </div>
-<small>hosted by <a href="https://pages.github.com">github pages</a></small>
