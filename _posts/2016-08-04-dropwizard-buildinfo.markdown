@@ -93,7 +93,7 @@ Using JCabi is easy:
 It seemed reasonable (and more flexible) to me to just expose the entire Manifest, rather than some specific keys, so next I created a small REST resource to do just that:
 
 
-```
+{% highlight java %}
 package com.mysensara.resources;
 
 import javax.ws.rs.GET;
@@ -114,14 +114,14 @@ public class MetaResource {
     }
 
 }
-```
+{% endhighlight %}
 
 I'm a big fan of [Dropwizard](http://www.dropwizard.io) which makes it very easy to build REST api's. It embeds Jackson for Json serialization so we don't need to worry about that.
 
 So lastly we register the resource in our main class:
-```
+{% highlight java %}
 environment.jersey().register(new MetaResource());
-```
+{% endhighlight %}
 and voila, we can read the manifest over HTTP.
 
 ## 3. Exposing the manifest on Dropwizard's admin api
@@ -133,7 +133,7 @@ Unfortunately, it turns out this is not so easy ([see Stackoverflow](http://stac
 
 At this point you can ask yourself whether you really need a full blown javax.ws resource, or whether a simple servlet will do. I decided that a servlet is just fine, and we can register that directly on the AdminEnvironment. We can reuse the Jackson ObjectMapper from the Dropwizard runtime for the Json serialization. The code for the servlet:
 
-```
+{% highlight java %}
 package com.mysensara;
 
 import java.io.IOException;
@@ -170,14 +170,14 @@ public class MetaServlet extends HttpServlet {
     }
 
 }
-```
+{% endhighlight %}
 
 And it can be registered in our main class like this:
 
-```
+{% highlight java %}
 environment.admin().addServlet("meta", new MetaServlet(environment.getObjectMapper()))
         .addMapping("/meta");
-```
+{% endhighlight %}
 
 That's it. You could add code to cache the manifest (since it needs to read the file which is a fairly expensive operation) but since we will call it rarely, I've not found that worthwhile. There may be cases in which you want to do that, such as when you add metadata to a HTTP response header. 
 
