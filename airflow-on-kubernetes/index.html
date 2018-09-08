@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Hugo 0.48" />
+
+
+<title>Airflow on Kubernetes - Roland de Boo</title>
+<meta property="og:title" content="Airflow on Kubernetes - Roland de Boo">
+
+
+
+  
+
+
+
+
+
+
+<link rel="stylesheet" href="https://roland.de-boo.nl/css/main.css" media="all">
+<link rel="stylesheet" href="https://roland.de-boo.nl/css/fonts.css">
+
+  </head>
+  <body>
+    <div class="wrapper">
+      <header class="header">
+        <nav class="nav">
+  <a href="https://roland.de-boo.nl/" class="nav-logo">
+    <img src="https://roland.de-boo.nl/images/logo.png" 
+         width="50" 
+         height="50" 
+         alt="Logo">
+  </a>
+
+  <ul class="nav-links">
+    
+    <li><a href="/tags">Tags</a></li>
+    
+    <li><a href="/about/">About</a></li>
+    
+  </ul>
+</nav>
+
+      </header>
+
+
+<main class="content" role="main">
+  <article class="article">
+    <h1 class="article-title">Airflow on Kubernetes</h1>
+    
+    <span class="article-date">2018-04-18</span>
+    
+
+    <div class="article-content">
+      
+
+<h1 id="guide-to-airflow-on-kubernetes">Guide to Airflow on Kubernetes</h1>
+
+<p>Recently I spend quite some time diving into <a href="https://airflow.incubator.apache.org/">Airflow</a> and <a href="https://kubernetes.io">Kubernetes</a>. While there are reports of people using them together, I could not find any comprehensive guide or tutorial. Also, there are many forks and abandoned scripts and repositories. So you need to do some research.</p>
+
+<p>Here I write down what I&rsquo;ve found, in the hope that it is helpful to others. Because things move quickly, I&rsquo;ve decided to put this on Github rather than in a blog post, so it can be easily updated. Please do not hesitate to provide updates, suggestions, fixes etc.</p>
+
+<h2 id="decide-what-you-want">Decide what you want</h2>
+
+<p>There are some related, but different scenarios:</p>
+
+<ol>
+<li>Using Airflow to schedule jobs on Kubernetes</li>
+<li>Running Airflow itself on Kubernetes</li>
+<li>Do both at the same time</li>
+</ol>
+
+<p>You can actually replace Airflow with X, and you will see this pattern all the time. E.g. you can use Jenkins or Gitlab (buildservers) on a VM, but use them to deploy on Kubernetes. Or you can host them on Kubernetes, but deploy somewhere else, like on a VM. And of course you can run them in Kubernetes and deploy to Kubernetes as well.</p>
+
+<p>The reason that I make this distinction is that you typically need to perform some different steps for each scenario. And you may not need both.</p>
+
+<h3 id="1-scheduling-jobs-on-kubernetes">[1] Scheduling jobs on Kubernetes</h3>
+
+<p>The simplest way to achieve this right now, is by using the kubectl commandline utility (in a BashOperator) or the <a href="https://github.com/kubernetes-client/python">python sdk</a>.
+However, you can also deploy your Celery workers on Kubernetes. The Helm chart mentioned below does this.</p>
+
+<h4 id="native-kubernetes-integration">Native Kubernetes integration</h4>
+
+<p>Work is in progress that should lead to native support by Airflow for scheduling jobs on Kubernetes. The wiki contains a <a href="https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=71013666">discussion</a> about what this will look like, though the pages haven&rsquo;t been updated in a while. Progress can be tracked in Jira (<a href="https://issues.apache.org/jira/browse/AIRFLOW-1314">AIRFLOW-1314</a>).</p>
+
+<p>Development is being done in a fork of Airflow at <a href="https://github.com/bloomberg/airflow">bloomberg/airflow</a>. This is still work in progress so deploying it should probably not be done in production.</p>
+
+<h4 id="kubernetespodoperator-coming-in-1-10">KubernetesPodOperator (coming in 1.10)</h4>
+
+<p>A subset of functionality will be released earlier, according to <a href="https://issues.apache.org/jira/browse/AIRFLOW-1517">AIRFLOW-1517</a>.</p>
+
+<p>In the next release of Airflow (1.10), a new Operator will be introduced that leads to a better, native integration of Airflow with Kubernetes. The cool thing about this Operator will be that you can define custom Docker images per task.
+Previously, if your task requires some python library or other dependency, you&rsquo;ll need to install that on the workers. So your workers end up hosting the combination of all dependencies of all your DAGs.
+I think eventually this can replace the CeleryExecutor for many installations.</p>
+
+<p>Documentation for the new Operator <a href="https://github.com/apache/incubator-airflow/blob/master/docs/kubernetes.rst">can be found here</a>.</p>
+
+<h3 id="2-running-airflow-on-kubernetes">[2] Running Airflow on Kubernetes</h3>
+
+<p>Airflow is implemented in a modular way. The main components are the scheduler, the webserver, and workers.
+You also probably want a database.
+If you want to distribute workers, you may want to use the CeleryExecutor. In that case, you&rsquo;ll probably want Flower (a UI for Celery) and you need a queue, like RabbitMQ or Redis.</p>
+
+<p>First thing you need is a Docker image that packages Airflow. Most people seem to use <a href="https://github.com/puckel/docker-airflow">puckel/docker-airflow</a>. This is a robust Docker image that is up to date and also has an automated build set up, pushing images to Dockerhub. This means that you do not need to build your own image when you are first starting out. The image has an <a href="https://github.com/puckel/docker-airflow/blob/master/script/entrypoint.sh">entrypoint script</a> that allows the container to fulfill the role of scheduler, webserver, flower, or worker.</p>
+
+<p>Next you need to create some Kubernetes manifests, or a Helm chart.
+There is some work in this area, but it is not completely finished yet.</p>
+
+<h4 id="relevant-projects">Relevant projects</h4>
+
+<ul>
+<li><a href="https://github.com/gsemet/kube-airflow/">gsemet/kube-airflow</a>
+
+<ul>
+<li>This is a great start. Originally forked from <a href="https://github.com/mumoshu/kube-airflow">mumoshu/kube-airflow</a> which seems abandoned.</li>
+</ul></li>
+<li><a href="https://github.com/gsemet/charts/tree/airflow/incubator/airflow">gsemet/charts@airflow</a>
+
+<ul>
+<li>This is where the current development happens (on the airflow branch). <a href="https://github.com/kubernetes/charts/pull/3959">This PR</a> is to get it merged into the <a href="https://github.com/kubernetes/charts">kubernetes/charts repository</a>.</li>
+</ul></li>
+<li><a href="https://github.com/bloomberg/airflow/blob/airflow-kubernetes-executor/scripts/ci/kubernetes/kube/airflow.yaml.template">bloomberg/airflow</a> This repository contains a Kubernetes manifest that may be inspected for inspiration.<br />
+<br /></li>
+</ul>
+
+<p>For installation instructions, follow the <a href="https://github.com/gsemet/charts/blob/airflow/incubator/airflow/README.md">readme</a>. Basically it is as simple as</p>
+<div class="highlight"><pre style="color:#d0d0d0;background-color:#202020;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">helm install --namespace <span style="color:#ed9d13">&#34;airflow&#34;</span> --name <span style="color:#ed9d13">&#34;airflow&#34;</span> incubator/airflow</code></pre></div>
+<h2 id="deploying-your-dags">Deploying your DAGs</h2>
+
+<p>There are several ways to deploy your DAG files when running Airflow on Kubernetes.
+1. git-sync
+2. Persistent Volume
+3. Embedding in Docker container</p>
+
+<h3 id="mounting-persistent-volume">Mounting Persistent Volume</h3>
+
+<p>You can store your DAG files on an external volume, and mount this volume into the relevant Pods
+(scheduler, web, worker). In this scenario, your CI/CD pipeline should update the DAG files in the
+PV.
+Since all Pods should have the same collection of DAG files, it is recommended to create just one PV
+that is shared. This ensures that the Pods are always in sync about the DagBag.</p>
+
+<p>To share a PV with multiple Pods, the PV needs to have accessMode &lsquo;ReadOnlyMany&rsquo; or &lsquo;ReadWriteMany&rsquo;.
+If you are on AWS, you can use <a href="https://aws.amazon.com/efs/">Elastic File System (EFS)</a>.
+If you are on Azure, you can use <a href="https://docs.microsoft.com/en-us/azure/aks/azure-files-dynamic-pv">Azure File Storage (AFS)</a>.</p>
+
+<p>If you mount the PV as ReadOnlyMany, you get reasonable security because the DAG files cannot be manipulated from within the Kubernetes cluster. You can then update the DAG files via another channel, for example, your build server.</p>
+
+<h2 id="rbac">RBAC</h2>
+
+<p>If your cluster has <a href="https://kubernetes.io/docs/admin/authorization/rbac/">RBAC</a> turned on, and you want to launch Pods from Airflow, you will need to bind the appropriate roles to the serviceAccount of the Pod that wants to schedule other Pods. Typically, this means that the Workers (when using CeleryExecutor) or the Scheduler (using LocalExecutor or the new KubernetesPodExecutor) need extra permissions. You&rsquo;ll need to grant the &lsquo;watch/create&rsquo; verbs on Pods.</p>
+
+<h2 id="relevant-links">Relevant links</h2>
+
+<ul>
+<li><a href="https://github.com/jghoman/awesome-apache-airflow">Awesome Apache Airflow</a></li>
+</ul>
+
+    </div>
+ 
+    <ul class="article-taxonomy">
+      
+    
+      
+      <li>
+        <i class="fa fa-tags"></i><a href="/tags/airflow">Airflow</a><a href="/tags/kubernetes">Kubernetes</a>
+      </li>
+      
+  </article>
+
+</main>
+
+      <footer class="footer">
+        <ul class="footer-links">
+          <li>
+            <a href="https://roland.de-boo.nl/index.xml" type="application/rss+xml" target="_blank"><i class="fa fa-rss"></i> RSS feed</a>
+          </li>
+          <li>
+            <a href="https://github.com/mobybit/hugo-natrium-theme"><i class="fa fa-github"></i> Code</a>
+          </li>
+          <li>
+            <a href="https://roland.de-boo.nl/site-notice">Site notice</a>
+          </li>
+        </ul>
+      </footer>
+
+    </div>
+
+  </body>
+</html>
+

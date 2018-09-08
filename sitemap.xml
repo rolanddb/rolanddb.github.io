@@ -8,8 +8,19 @@
   </url>
   
   <url>
+    <loc>https://roland.de-boo.nl/airflow-on-kubernetes/</loc>
+    <lastmod>2018-04-18T17:30:58+02:00</lastmod>
+  </url>
+  
+  <url>
     <loc>https://roland.de-boo.nl/exposing-build-metadata-in-your-dropwizard-webservice/</loc>
     <lastmod>2016-08-04T00:18:23+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://roland.de-boo.nl/tags/airflow/</loc>
+    <lastmod>2018-04-18T17:30:58+02:00</lastmod>
+    <priority>0</priority>
   </url>
   
   <url>
@@ -36,6 +47,12 @@
   </url>
   
   <url>
+    <loc>https://roland.de-boo.nl/tags/kubernetes/</loc>
+    <lastmod>2018-04-18T17:30:58+02:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
     <loc>https://roland.de-boo.nl/tags/microservices/</loc>
     <lastmod>2016-08-04T00:18:23+00:00</lastmod>
     <priority>0</priority>
@@ -55,7 +72,7 @@
   
   <url>
     <loc>https://roland.de-boo.nl/tags/</loc>
-    <lastmod>2018-09-08T15:59:23+02:00</lastmod>
+    <lastmod>2018-04-18T17:30:58+02:00</lastmod>
     <priority>0</priority>
   </url>
   
