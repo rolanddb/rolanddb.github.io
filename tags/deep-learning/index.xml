@@ -17,7 +17,7 @@
       <pubDate>Sat, 08 Sep 2018 15:59:23 +0200</pubDate>
       
       <guid>https://roland.de-boo.nl/infrastructure-for-deep-learning/</guid>
-      <description>Last year I freed up some time to follow along with the MOOC &amp;ldquo;Practical Deep Learning for Coders&amp;rdquo; at fast.ai. It&amp;rsquo;s a great introduction if you want to dive right into the material and get your hands dirty. However, I am a little allergic to statements like &amp;ldquo;it only requires 7 lines of code!&amp;rdquo; so the example notebooks are too magical for my taste. I quickly found myself peeling off the layers of abstraction and digging into the utility classes.</description>
+      <description>Infrastructure for Deep Learning Last year I freed up some time to follow along with the MOOC &amp;ldquo;Practical Deep Learning for Coders&amp;rdquo; at fast.ai. It&amp;rsquo;s a great introduction if you want to dive right into the material and get your hands dirty. However, I am a little allergic to statements like &amp;ldquo;it only requires 7 lines of code!&amp;rdquo; so the example notebooks are too magical for my taste. I quickly found myself peeling off the layers of abstraction and digging into the utility classes.</description>
     </item>
     
   </channel>
