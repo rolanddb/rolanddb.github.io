@@ -3,17 +3,59 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   
   <url>
-    <loc>http://example.org/categories/</loc>
+    <loc>https://roland.de-boo.nl/infrastructure-for-deep-learning/</loc>
+    <lastmod>2018-09-08T15:59:23+02:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://roland.de-boo.nl/exposing-build-metadata-in-your-dropwizard-webservice/</loc>
+    <lastmod>2016-08-04T00:18:23+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://roland.de-boo.nl/categories/</loc>
     <priority>0</priority>
   </url>
   
   <url>
-    <loc>http://example.org/</loc>
+    <loc>https://roland.de-boo.nl/tags/cloud/</loc>
+    <lastmod>2018-09-08T15:59:23+02:00</lastmod>
     <priority>0</priority>
   </url>
   
   <url>
-    <loc>http://example.org/tags/</loc>
+    <loc>https://roland.de-boo.nl/tags/deep-learning/</loc>
+    <lastmod>2018-09-08T15:59:23+02:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://roland.de-boo.nl/tags/java/</loc>
+    <lastmod>2016-08-04T00:18:23+00:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://roland.de-boo.nl/tags/microservices/</loc>
+    <lastmod>2016-08-04T00:18:23+00:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://roland.de-boo.nl/post/</loc>
+    <lastmod>2018-09-08T15:59:23+02:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://roland.de-boo.nl/</loc>
+    <lastmod>2018-09-08T15:59:23+02:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://roland.de-boo.nl/tags/</loc>
+    <lastmod>2018-09-08T15:59:23+02:00</lastmod>
     <priority>0</priority>
   </url>
   

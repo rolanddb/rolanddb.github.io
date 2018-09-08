@@ -1,15 +1,14 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Roland de Boo</title>
-    <link>https://roland.de-boo.nl/</link>
-    <description>Recent content on Roland de Boo</description>
+    <title>Cloud on Roland de Boo</title>
+    <link>https://roland.de-boo.nl/tags/cloud/</link>
+    <description>Recent content in Cloud on Roland de Boo</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <lastBuildDate>Sat, 08 Sep 2018 15:59:23 +0200</lastBuildDate>
     
-        <atom:link href="https://roland.de-boo.nl/index.xml" rel="self" type="application/rss+xml" />
-    
+	<atom:link href="https://roland.de-boo.nl/tags/cloud/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
@@ -20,18 +19,6 @@
       <guid>https://roland.de-boo.nl/infrastructure-for-deep-learning/</guid>
       <description>Last year I freed up some time to follow along with the MOOC &amp;ldquo;Practical Deep Learning for Coders&amp;rdquo; at fast.ai. It&amp;rsquo;s a great introduction if you want to dive right into the material and get your hands dirty. However, I am a little allergic to statements like &amp;ldquo;it only requires 7 lines of code!&amp;rdquo; so the example notebooks are too magical for my taste. I quickly found myself peeling off the layers of abstraction and digging into the utility classes.</description>
     </item>
-    
-    
-    
-    <item>
-      <title>Exposing build metadata in your Dropwizard webservice</title>
-      <link>https://roland.de-boo.nl/exposing-build-metadata-in-your-dropwizard-webservice/</link>
-      <pubDate>Thu, 04 Aug 2016 00:18:23 +0000</pubDate>
-      
-      <guid>https://roland.de-boo.nl/exposing-build-metadata-in-your-dropwizard-webservice/</guid>
-      <description>Exposing metadata from the jar manifest in Web Service In my current job we develop as a continuous delivery process - meaning every build is a artifact that can potentially be deployed to production. Therefore we do not version our software anymore - we stick to the snapshots. The question arises - how do we keep track of what is deployed to production? Deployment happens a lot (i.e. daily), so doing this manually is cumbersome and prone to errors.</description>
-    </item>
-    
     
   </channel>
 </rss>

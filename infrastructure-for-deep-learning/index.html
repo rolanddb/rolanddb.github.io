@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Hugo 0.48" />
+
+
+<title>Infrastructure for Deep Learning - Roland de Boo</title>
+<meta property="og:title" content="Infrastructure for Deep Learning - Roland de Boo">
+
+
+
+  
+
+
+
+
+
+
+<link rel="stylesheet" href="https://roland.de-boo.nl/css/main.css" media="all">
+<link rel="stylesheet" href="https://roland.de-boo.nl/css/fonts.css">
+
+  </head>
+  <body>
+    <div class="wrapper">
+      <header class="header">
+        <nav class="nav">
+  <a href="https://roland.de-boo.nl/" class="nav-logo">
+    <img src="https://roland.de-boo.nl/images/logo.png" 
+         width="50" 
+         height="50" 
+         alt="Logo">
+  </a>
+
+  <ul class="nav-links">
+    
+    <li><a href="/tags">Tags</a></li>
+    
+    <li><a href="/about/">About</a></li>
+    
+  </ul>
+</nav>
+
+      </header>
+
+
+<main class="content" role="main">
+  <article class="article">
+    <h1 class="article-title">Infrastructure for Deep Learning</h1>
+    
+    <span class="article-date">2018-09-08</span>
+    
+
+    <div class="article-content">
+      
+
+<p>Last year I freed up some time to follow along with the MOOC &ldquo;Practical Deep Learning for Coders&rdquo; at fast.ai. It&rsquo;s a great introduction if you want to dive right into the material and get your hands dirty. However, I am a little allergic to statements like &ldquo;it only requires 7 lines of code!&rdquo; so the example notebooks are too magical for my taste. I quickly found myself peeling off the layers of abstraction and digging into the utility classes. This can be difficult because of all the abbreviated variable and function names, and the lack of comments in the code itself. After a while it started to feel like more work than building the whole thing from the ground up.</p>
+
+<h2 id="infra">Infra</h2>
+
+<p>At the same time, I wanted to understand what is involved in actually running this code in the cloud. There are some very userfriendly services such as <a href="https://www.paperspace.com/">Paperspace</a> and <a href="https://www.crestle.com/">Crestle</a> which you can use to start coding without having to worry about infrastructure. But I like to know my options and also save some money, so I opted for the DIY approach. I started out in AWS for which Jeremy provided some AMI&rsquo;s. However, using these AMI&rsquo;s you need to pay for the EBS volume even when the machine is not running. So I followed some guides that had a more sophisticated approach, and mounted the volume on boot. This was fun to play around with, but took some time. The field is developing rapidly, and blogs and guides with installation instructions from even a few months are typically outdated. I found myself struggling to get the stack right: choose the right version of CUDA (not too new, not too old), installing Theano, Keras, all the libraries. Then halfway through, it became clear that part two of the couse would use Tensorflow, so I installed the whole stack again. I learned a lot but also spend a lot of time on infra, that I didn&rsquo;t spend on actually applying deep learning.</p>
+
+<p>So I decided to do a second pass of the course. Anno 2018, the course is based on <a href="https://pytorch.org/">PyTorch</a> so I&rsquo;ll start from scratch again. I will still be running my own infra, but opt for pre-build images or Docker images whereever possible. The aim is to do more coding this time.</p>
+
+<h2 id="my-setup-this-year">My setup this year</h2>
+
+<p>I&rsquo;m going to use <a href="https://cloud.google.com/">Google Cloud Platform</a> because it&rsquo;s been a while since I last worked on GCP and I like to keep up with the clouds. I found <a href="https://medium.com/the-artificial-impostor/prepare-deep-learning-ready-vms-on-google-cloud-platform-309e34c0fea">this guide with Deep Learning VMs</a> and booted one in my subscription. Next was installing Anaconda, cloning the fast.ai repo and installing all the Python packages. However, the VM image has both Python 2 and 3 and while installation appeared to be fine, I could not load the libraries in my Juyter notebook.</p>
+
+<h3 id="docker">Docker</h3>
+
+<p>My work has involved tons of Docker/Kubernetes and the workflow has really grown on me. So I went out to find a Docker image I could use for the fast.ai course. It turns out that <code>paperspace/fastai:cuda9_pytorch0.3.0</code> exists. However, this has the whole <code>cats vs dogs</code> dataset embedded which I don&rsquo;t think is a great idea!</p>
+
+<p>Via the forums I found <a href="https://towardsdatascience.com/use-nvidia-docker-to-create-awesome-deep-learning-environments-for-r-or-python-pt-i-df8e89b43a72">this post</a> which refers to <a href="https://github.com/KaiLicht/DataScience_Toolbox/blob/master/dockerfiles/fast_ai/Dockerfile">this container</a> by Kai Lichtenberg and it worked perfect for me. It is based of <code>nvcr.io/nvidia/pytorch:18.05-py3</code> which has the required drivers, Python 3 and even PyTorch. Note that this image is not available on Dockerhub so you&rsquo;ll need to head over to <a href="https://ngc.nvidia.com/signup/register">NVIDIA Cloud</a> which is just another Docker registry. After signing up you get an API key which can be used to to pull the Docker containers.</p>
+
+<p>I mount my data and notebooks into the Docker image on startup like this: <code>docker run --runtime=nvidia -it --rm --ipc=host -v ~/data:/fastai/data -p 8888:8888 kailicht/fastdotai</code>.</p>
+
+<p>Note the <code>--ipc=host</code> flag, this is really important! Everything was working for me, but training a model was really slow. I found this explanation: &ldquo;Please note that PyTorch uses shared memory to share data between processes, so if torch multiprocessing is used (e.g. for multithreaded data loaders) the default shared memory segment size that container runs with is not enough, and you should increase shared memory size either with &ndash;ipc=host or &ndash;shm-size command line options to nvidia-docker run.&rdquo;</p>
+
+<p>So it still took me some hours but I now have nice setup that I can easily reproduce.</p>
+
+    </div>
+ 
+    <ul class="article-taxonomy">
+      
+    
+      
+      <li>
+        <i class="fa fa-tags"></i><a href="/tags/deep-learning">Deep Learning</a><a href="/tags/cloud">Cloud</a>
+      </li>
+      
+  </article>
+
+</main>
+
+      <footer class="footer">
+        <ul class="footer-links">
+          <li>
+            <a href="https://roland.de-boo.nl/index.xml" type="application/rss+xml" target="_blank"><i class="fa fa-rss"></i> RSS feed</a>
+          </li>
+          <li>
+            <a href="https://github.com/mobybit/hugo-natrium-theme"><i class="fa fa-github"></i> Code</a>
+          </li>
+          <li>
+            <a href="https://roland.de-boo.nl/site-notice">Site notice</a>
+          </li>
+        </ul>
+      </footer>
+
+    </div>
+
+  </body>
+</html>
+

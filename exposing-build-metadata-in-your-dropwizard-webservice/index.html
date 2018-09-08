@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Hugo 0.48" />
+
+
+<title>Exposing build metadata in your Dropwizard webservice - Roland de Boo</title>
+<meta property="og:title" content="Exposing build metadata in your Dropwizard webservice - Roland de Boo">
+
+
+
+  
+
+
+
+
+
+
+<link rel="stylesheet" href="https://roland.de-boo.nl/css/main.css" media="all">
+<link rel="stylesheet" href="https://roland.de-boo.nl/css/fonts.css">
+
+  </head>
+  <body>
+    <div class="wrapper">
+      <header class="header">
+        <nav class="nav">
+  <a href="https://roland.de-boo.nl/" class="nav-logo">
+    <img src="https://roland.de-boo.nl/images/logo.png" 
+         width="50" 
+         height="50" 
+         alt="Logo">
+  </a>
+
+  <ul class="nav-links">
+    
+    <li><a href="/tags">Tags</a></li>
+    
+    <li><a href="/about/">About</a></li>
+    
+  </ul>
+</nav>
+
+      </header>
+
+
+<main class="content" role="main">
+  <article class="article">
+    <h1 class="article-title">Exposing build metadata in your Dropwizard webservice</h1>
+    
+    <span class="article-date">2016-08-04</span>
+    
+
+    <div class="article-content">
+      
+
+<h1 id="exposing-metadata-from-the-jar-manifest-in-web-service">Exposing metadata from the jar manifest in Web Service</h1>
+
+<p>In my current job we develop as a continuous delivery process - meaning every build is a artifact that can potentially be deployed to production. Therefore we do not version our software anymore - we stick to the snapshots. The question arises - how do we keep track of what is deployed to production? Deployment happens a lot (i.e. daily), so doing this manually is cumbersome and prone to errors.</p>
+
+<p>I know that Jenkins has a fingerprint ability (you can upload a jar file and it will tell you which build it is) but this seems like a lot of work. We have almost a dozen microservices running. What I was looking for was some kind of dashboard that tells me for every service what version it is.</p>
+
+<p>So my approach is this:</p>
+
+<ol>
+<li>Embed metadata in each build (jar) that tracks the Git revision number and other potentially usefull information</li>
+<li>Expose this information via an HTTP endpoint</li>
+</ol>
+
+<p>This is not rocket science, but it took me a couple of hours of googling and experimenting before I got everything to work. Here is the result, in the hope that it is useful.</p>
+
+<h2 id="1-embedding-metadata">1. Embedding metadata</h2>
+
+<p>Each jar contains the MANIFEST.MF file, which is a dictionary of information. This seems like the right place to keep the information. We use Maven as our build tool, so we add the following plugins to our pom.xml:</p>
+
+<!-- enable JGit plugin -->
+
+<pre><code>        &lt;plugin&gt;
+            &lt;groupId&gt;ru.concerteza.buildnumber&lt;/groupId&gt;
+            &lt;artifactId&gt;maven-jgit-buildnumber-plugin&lt;/artifactId&gt;
+            &lt;version&gt;1.2.9&lt;/version&gt;
+            &lt;executions&gt;
+                &lt;execution&gt;
+                    &lt;id&gt;git-buildnumber&lt;/id&gt;
+                    &lt;goals&gt;
+                        &lt;goal&gt;extract-buildnumber&lt;/goal&gt;
+                    &lt;/goals&gt;
+                    &lt;phase&gt;prepare-package&lt;/phase&gt;
+                &lt;/execution&gt;
+            &lt;/executions&gt;
+        &lt;/plugin&gt;
+        &lt;!-- write to manifest --&gt;
+
+        &lt;plugin&gt;
+            &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+            &lt;artifactId&gt;maven-jar-plugin&lt;/artifactId&gt;
+            &lt;version&gt;2.3.2&lt;/version&gt;
+            &lt;configuration&gt;
+                &lt;archive&gt;
+                    &lt;manifest&gt;
+                        &lt;addDefaultImplementationEntries&gt;true&lt;/addDefaultImplementationEntries&gt;
+                    &lt;/manifest&gt;
+                    &lt;manifestEntries&gt;
+                        &lt;Specification-Title&gt;${project.name}&lt;/Specification-Title&gt;
+                        &lt;Specification-Version&gt;${project.version}&lt;/Specification-Version&gt;
+                        &lt;Specification-Vendor&gt;${project.specification_vendor}&lt;/Specification-Vendor&gt;
+                        &lt;Implementation-Title&gt;${project.groupId}.${project.artifactId}&lt;/Implementation-Title&gt;
+                        &lt;Implementation-Vendor&gt;${project.implementation_vendor}&lt;/Implementation-Vendor&gt;
+                        &lt;Implementation-Version&gt;${git.revision}&lt;/Implementation-Version&gt;
+                        &lt;X-Git-Branch&gt;${git.branch}&lt;/X-Git-Branch&gt;
+                        &lt;X-Git-Tag&gt;${git.tag}&lt;/X-Git-Tag&gt;
+                        &lt;X-Git-Commits-Count&gt;${git.commitsCount}&lt;/X-Git-Commits-Count&gt;
+                        &lt;Build-Time&gt;${maven.build.timestamp}&lt;/Build-Time&gt;
+                    &lt;/manifestEntries&gt;
+                &lt;/archive&gt;
+            &lt;/configuration&gt;
+        &lt;/plugin&gt;
+</code></pre>
+
+<p>The first plugin (<a href="https://github.com/alx3apps/jgit-buildnumber">JGit</a>) allows us to get the git revision number, and the second plugin (maven-jar-plugin) may already be in your pom file, in which case you just add the <em>manifestEntries</em> part.</p>
+
+<p>Our build is hierarchical, and we have a <em>company-parent</em> pom file that contains the base dependencies and version numbers. Once we add the plugins to this parent pom, all our build jars contain the build metadata in the manifest.</p>
+
+<p>Let&rsquo;s try to read the information. A jar is just a zip file, so you can unpack the jar and view the manifest file. On OSx or Linux, you can read the file from the commandline without creating temporary files, like this:</p>
+
+<pre><code>unzip -q -c target/myservice.jar META-INF/MANIFEST.MF
+</code></pre>
+
+<p>I find this command so useful that I keep it in my bash_profile as a function:</p>
+
+<pre><code>inspectjar() {
+  unzip -q -c $1 META-INF/MANIFEST.MF
+}
+</code></pre>
+
+<h2 id="2-exposing-the-manifest">2. Exposing the manifest</h2>
+
+<p>Now that the .jar file contains the metadata, the next step is to read this manifest programatically. It appears that this is not trivial - your jar will also contain its dependent jar files. Each embedded jar will also contain a Manifest, and there seems to be no easy way to find the Manifest that we are looking for. So you end up looping through all manifests to find the right manifest. After some time spend on Stackoverflow <a href="http://stackoverflow.com/questions/1272648/reading-my-own-jars-manifest">1</a> <a href="http://stackoverflow.com/questions/7807782/is-there-any-way-to-access-the-name-value-pairs-of-a-manifest-mf-from-the-enclos?rq=1">2</a>
+<a href="http://stackoverflow.com/questions/37654184/programmatically-read-manifest-mf-from-jar-in-an-ear">3</a> I&rsquo;ve settled on using <a href="http://manifests.jcabi.com">JCabi</a> which is a small library that does exactly what I want. I suppose that under the hood it does roughly the same as the suggested solutions on Stackoverflow, but at least I didn&rsquo;t reinvent the wheel.</p>
+
+<p>Using JCabi is easy:</p>
+
+<p><code>Manifests.DEFAULT</code> gives you a Map representing all the keys and values in the manifest.
+<code>Manifests.DEFAULT.read(key)</code> gives you a specific value.</p>
+
+<p>It seemed reasonable (and more flexible) to me to just expose the entire Manifest, rather than some specific keys, so next I created a small REST resource to do just that:</p>
+
+<p>{% highlight java %}
+package com.mycompany.resources;</p>
+
+<p>import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;</p>
+
+<p>import com.jcabi.manifests.Manifests;</p>
+
+<p>@Path(&ldquo;meta&rdquo;)
+@Produces(MediaType.APPLICATION_JSON)
+public class MetaResource {</p>
+
+<pre><code>@GET
+public Response status() {
+    return Response.ok(Manifests.DEFAULT).build();
+}
+</code></pre>
+
+<p>}
+{% endhighlight %}</p>
+
+<p>I&rsquo;m a big fan of <a href="http://www.dropwizard.io">Dropwizard</a> which makes it very easy to build REST api&rsquo;s. It embeds Jackson for Json serialization so we don&rsquo;t need to worry about that.</p>
+
+<p>So lastly we register the resource in our main class:
+{% highlight java %}
+environment.jersey().register(new MetaResource());
+{% endhighlight %}
+and voila, we can read the manifest over HTTP.</p>
+
+<h2 id="3-exposing-the-manifest-on-dropwizard-s-admin-api">3. Exposing the manifest on Dropwizard&rsquo;s admin api</h2>
+
+<p>However, if you create the REST resource like above, you end up exposing the information to the outside world. This may not be desirable, depending on whether your service is deployed on a secure network or on the public internet, and whether you have some security framework in place.</p>
+
+<p>Dropwizard has a separate context path /admin which you can access via a different port. It makes more sense to register our Meta resource here.</p>
+
+<p>Unfortunately, it turns out this is not so easy (<a href="http://stackoverflow.com/questions/32764337/dropwizard-new-admin-resource/34411900">see Stackoverflow</a>). After some more googling I found <a href="https://spin.atomicobject.com/2015/03/30/jersey-servlets-dropwizard/">this page</a> which explains how to create a new servlet container for our purpose, to which we can register our Meta resource.</p>
+
+<p>At this point you can ask yourself whether you really need a full blown javax.ws resource, or whether a simple servlet will do. I decided that a servlet is just fine, and we can register that directly on the AdminEnvironment. We can reuse the Jackson ObjectMapper from the Dropwizard runtime for the Json serialization. The code for the servlet:</p>
+
+<p>{% highlight java %}
+package com.mycompany;</p>
+
+<p>import java.io.IOException;
+import java.io.PrintWriter;</p>
+
+<p>import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;</p>
+
+<p>import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jcabi.manifests.Manifests;</p>
+
+<p>public class MetaServlet extends HttpServlet {</p>
+
+<pre><code>private final ObjectMapper objectMapper;
+
+public MetaServlet(ObjectMapper objectMapper) {
+    this.objectMapper = objectMapper;
+}
+
+@Override
+protected void doGet(HttpServletRequest req, HttpServletResponse resp)
+        throws ServletException, IOException
+{
+    // Set response content type
+    resp.setContentType(&quot;application/json&quot;);
+
+    // Write response.
+    PrintWriter out = resp.getWriter();
+    String json = objectMapper.writeValueAsString(Manifests.DEFAULT);
+    out.println(json);
+}
+</code></pre>
+
+<p>}
+{% endhighlight %}</p>
+
+<p>And it can be registered in our main class like this:</p>
+
+<p>{% highlight java %}
+environment.admin().addServlet(&ldquo;meta&rdquo;, new MetaServlet(environment.getObjectMapper()))
+        .addMapping(&ldquo;/meta&rdquo;);
+{% endhighlight %}</p>
+
+<p>That&rsquo;s it. You could add code to cache the manifest (since it needs to read the file which is a fairly expensive operation) but since we will call it rarely, I&rsquo;ve not found that worthwhile. There may be cases in which you want to do that, such as when you add metadata to a HTTP response header.</p>
+
+<p>The final result looks like this:</p>
+
+<pre><code>$ curl localhost:7575/admin/meta
+{
+  &quot;Archiver-Version&quot;: &quot;Plexus Archiver&quot;,
+  &quot;Implementation-Title&quot;: &quot;com.mycompany.gateway-statecontroller-service&quot;,
+  &quot;Specification-Version&quot;: &quot;1.0.0-SNAPSHOT&quot;,
+  &quot;Implementation-Version&quot;: &quot;a66326471fd69b46d9dc8ba9beabf6278b1188de&quot;,
+  &quot;Manifest-Version&quot;: &quot;1.0&quot;,
+  &quot;Created-By&quot;: &quot;Apache Maven&quot;,
+  &quot;Implementation-Vendor-Id&quot;: &quot;com.mycompany&quot;,
+  &quot;Build-Jdk&quot;: &quot;1.8.0&quot;,
+  &quot;Specification-Vendor&quot;: &quot;&quot;,
+  &quot;Implementation-Vendor&quot;: &quot;&quot;,
+  &quot;Build-Time&quot;: &quot;2016-08-08T09:03:49Z&quot;,
+  &quot;X-Git-Commits-Count&quot;: &quot;3212&quot;,
+  &quot;Specification-Title&quot;: &quot;gateway-statecontroller-service&quot;,
+  &quot;X-Git-Branch&quot;: &quot;&quot;,
+  &quot;Built-By&quot;: &quot;jenkins&quot;,
+  &quot;Main-Class&quot;: &quot;com.mycompany.gsc.ApplicationModule&quot;
+}
+</code></pre>
+
+<p>Note that Implementation-Version contains the SHA hash that refers to the Git revision that lead to this build.</p>
+
+    </div>
+ 
+    <ul class="article-taxonomy">
+      
+    
+      
+      <li>
+        <i class="fa fa-tags"></i><a href="/tags/java">Java</a><a href="/tags/microservices">Microservices</a>
+      </li>
+      
+  </article>
+
+</main>
+
+      <footer class="footer">
+        <ul class="footer-links">
+          <li>
+            <a href="https://roland.de-boo.nl/index.xml" type="application/rss+xml" target="_blank"><i class="fa fa-rss"></i> RSS feed</a>
+          </li>
+          <li>
+            <a href="https://github.com/mobybit/hugo-natrium-theme"><i class="fa fa-github"></i> Code</a>
+          </li>
+          <li>
+            <a href="https://roland.de-boo.nl/site-notice">Site notice</a>
+          </li>
+        </ul>
+      </footer>
+
+    </div>
+
+  </body>
+</html>
+
