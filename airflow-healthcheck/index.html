@@ -90,7 +90,7 @@
 
 <p><img src="/images/airflow_healthcheck.png" alt="airflow_healthcheck.png" /></p>
 
-<p>Note that killing the scheduler may not actually solve the problem if the tasks do not finish for other reasons; such as a lack of compute resources in your namespace. I think the real issue here is that there is no out-of-the-box healthcheck for the scheduler (see <a href="https://issues.apache.org/jira/browse/AIRFLOW-1084">Airflow-1084</a>). But it goes a long way to solving the &lsquo;scheduler is stuck&rsquo; syndrome. Still, I&rsquo;d monitor some metrics (like # of tasks scheduled / completed) and put alerts on that, too.</p>
+<p>Note that killing the scheduler may not actually solve the problem if the tasks do not finish for other reasons; such as a lack of compute resources in your namespace. I think the real issue here is that there is no out-of-the-box healthcheck for the scheduler (see <a href="https://issues.apache.org/jira/browse/AIRFLOW-1084">Airflow-1084</a>). Recently, <a href="https://github.com/apache/airflow/blob/ddec6bbeb34bb3db5919a0dc87dd084552c54bef/docs/howto/check-health.rst">a healthcheck was added</a> but that is exposed on the webserver, not the scheduler. But the solution implemented here goes a long way to solving the &lsquo;scheduler is stuck&rsquo; syndrome. Still, I&rsquo;d monitor some metrics (like # of tasks scheduled / completed) and put alerts on that, too.</p>
 
 <h2 id="implementation">Implementation</h2>
 
