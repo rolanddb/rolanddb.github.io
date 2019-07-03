@@ -88,7 +88,7 @@
 
 <p>The following diagram describes the solution. A DAG is scheduled every 5 minutes. The DAG contains a PythonOperator that stores a heartbeat in the Airflow database. A healthcheck compares the timestamp in the database with the current timestamp, and if the timestamp has not been updated, the scheduler is assumed to be stuck and will be restarted.</p>
 
-<p><img src="/airflow_healthcheck.png" alt="airflow_healthcheck.png" /></p>
+<p><img src="/images/airflow_healthcheck.png" alt="airflow_healthcheck.png" /></p>
 
 <p>Note that killing the scheduler may not actually solve the problem if the tasks do not finish for other reasons; such as a lack of compute resources in your namespace. I think the real issue here is that there is no out-of-the-box healthcheck for the scheduler (see <a href="https://issues.apache.org/jira/browse/AIRFLOW-1084">Airflow-1084</a>. But it goes a long way to solving the &lsquo;scheduler is stuck&rsquo; syndrome. Still, I&rsquo;d monitor some metrics (like # of tasks scheduled / completed) and put alerts on that, too.</p>
 
