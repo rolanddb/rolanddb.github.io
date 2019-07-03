@@ -6,10 +6,20 @@
     <description>Recent content in Airflow on Roland de Boo</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Wed, 18 Apr 2018 17:30:58 +0200</lastBuildDate>
+    <lastBuildDate>Wed, 03 Jul 2019 09:19:46 +0200</lastBuildDate>
     
 	<atom:link href="https://roland.de-boo.nl/tags/airflow/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Airflow Healthcheck</title>
+      <link>https://roland.de-boo.nl/airflow-healthcheck/</link>
+      <pubDate>Wed, 03 Jul 2019 09:19:46 +0200</pubDate>
+      
+      <guid>https://roland.de-boo.nl/airflow-healthcheck/</guid>
+      <description>Airflow healthcheck I&amp;rsquo;ve been running Airflow for some years and in my experience, the scheduler sometimes gets stuck. I haven&amp;rsquo;t figured out why this happens, and to my knowledge, no one else has. This doesn&amp;rsquo;t stop me from using Airflow but the issue needs to be addressed or it will bite you at some point, because your pipelines will stall.
+I read the article Airflow on AKS this week and it is a good overview of how to deploy Airflow on AKS.</description>
+    </item>
     
     <item>
       <title>Airflow on Kubernetes</title>

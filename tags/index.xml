@@ -6,7 +6,7 @@
     <description>Recent content in Tags on Roland de Boo</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Wed, 18 Apr 2018 17:30:58 +0200</lastBuildDate>
+    <lastBuildDate>Wed, 03 Jul 2019 09:19:46 +0200</lastBuildDate>
     
 	<atom:link href="https://roland.de-boo.nl/tags/index.xml" rel="self" type="application/rss+xml" />
     
@@ -14,9 +14,18 @@
     <item>
       <title>Airflow</title>
       <link>https://roland.de-boo.nl/tags/airflow/</link>
-      <pubDate>Wed, 18 Apr 2018 17:30:58 +0200</pubDate>
+      <pubDate>Wed, 03 Jul 2019 09:19:46 +0200</pubDate>
       
       <guid>https://roland.de-boo.nl/tags/airflow/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Kubernetes</title>
+      <link>https://roland.de-boo.nl/tags/kubernetes/</link>
+      <pubDate>Wed, 03 Jul 2019 09:19:46 +0200</pubDate>
+      
+      <guid>https://roland.de-boo.nl/tags/kubernetes/</guid>
       <description></description>
     </item>
     
@@ -44,15 +53,6 @@
       <pubDate>Thu, 04 Aug 2016 00:18:23 +0000</pubDate>
       
       <guid>https://roland.de-boo.nl/tags/java/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>Kubernetes</title>
-      <link>https://roland.de-boo.nl/tags/kubernetes/</link>
-      <pubDate>Wed, 18 Apr 2018 17:30:58 +0200</pubDate>
-      
-      <guid>https://roland.de-boo.nl/tags/kubernetes/</guid>
       <description></description>
     </item>
     

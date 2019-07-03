@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Roland de Boo</title>
@@ -6,9 +5,21 @@
     <description>Recent content on Roland de Boo</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sat, 08 Sep 2018 15:59:23 +0200</lastBuildDate>
+    <lastBuildDate>Wed, 03 Jul 2019 09:19:46 +0200</lastBuildDate>
     
         <atom:link href="https://roland.de-boo.nl/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    
+    <item>
+      <title>Airflow Healthcheck</title>
+      <link>https://roland.de-boo.nl/airflow-healthcheck/</link>
+      <pubDate>Wed, 03 Jul 2019 09:19:46 +0200</pubDate>
+      
+      <guid>https://roland.de-boo.nl/airflow-healthcheck/</guid>
+      <description>Airflow healthcheck I&amp;rsquo;ve been running Airflow for some years and in my experience, the scheduler sometimes gets stuck. I haven&amp;rsquo;t figured out why this happens, and to my knowledge, no one else has. This doesn&amp;rsquo;t stop me from using Airflow but the issue needs to be addressed or it will bite you at some point, because your pipelines will stall.
+I read the article Airflow on AKS this week and it is a good overview of how to deploy Airflow on AKS.</description>
+    </item>
     
     
     
@@ -42,6 +53,18 @@ Here I write down what I&amp;rsquo;ve found, in the hope that it is helpful to o
       
       <guid>https://roland.de-boo.nl/exposing-build-metadata-in-your-dropwizard-webservice/</guid>
       <description>Exposing metadata from the jar manifest in Web Service In my current job we develop as a continuous delivery process - meaning every build is a artifact that can potentially be deployed to production. Therefore we do not version our software anymore - we stick to the snapshots. The question arises - how do we keep track of what is deployed to production? Deployment happens a lot (i.e. daily), so doing this manually is cumbersome and prone to errors.</description>
+    </item>
+    
+    
+    
+    <item>
+      <title></title>
+      <link>https://roland.de-boo.nl/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://roland.de-boo.nl/</guid>
+      <description>Airflow healthcheck I&amp;rsquo;ve been running Airflow for some years and in my experience, the scheduler sometimes gets stuck. I haven&amp;rsquo;t figured out why this happens, and to my knowledge, no one else has. This doesn&amp;rsquo;t stop me from using Airflow but the issue needs to be addressed or it will bite you at some point, because your pipelines will stall.
+I read the article Airflow on AKS this week and it is a good overview of how to deploy Airflow on AKS.</description>
     </item>
     
     
