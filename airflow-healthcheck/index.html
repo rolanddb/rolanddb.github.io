@@ -187,16 +187,16 @@ else:
 
 <p>In the Kubernetes manifest that describes the deployment of the scheduler, define the <em>livenessProbe</em>. This is in the container spec (same level as <em>imagePullPolicy</em>).</p>
 
-<pre><code>        livenessProbe:
-          exec:
-            command:
-            - python
-            - /opt/airflow/healthcheck.py
-          failureThreshold: 1
-          initialDelaySeconds: 600
-          periodSeconds: 600
-          successThreshold: 1
-          timeoutSeconds: 20
+<pre><code>livenessProbe:
+  exec:
+    command:
+    - python
+    - /opt/airflow/healthcheck.py
+  failureThreshold: 1
+  initialDelaySeconds: 600
+  periodSeconds: 600
+  successThreshold: 1
+  timeoutSeconds: 20
 </code></pre>
 
 <p>You can play with the numbers, but note that the 600 seconds correspond to <code>max_execution_delay</code> in <code>healthcheck.py</code>.</p>
