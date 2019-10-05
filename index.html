@@ -17,8 +17,8 @@
 <meta name="generator" content="Hugo 0.55.6" />
 
 
-<title>Roland de Boo</title>
-<meta property="og:title" content="Roland de Boo">
+<title></title>
+<meta property="og:title" content="">
 <meta property="og:type" content="website">
 
 
@@ -28,8 +28,6 @@
 
 
 
-
-<link href="https://roland.de-boo.nl/index.xml" rel="alternate" type="application/rss+xml" title="Roland de Boo" />
 
 
 
@@ -60,64 +58,184 @@
       </header>
 
 
-<main class="content">
-
-  <div class="list">
-         
-  <h2 class="list-title">2019</h2>
+<main class="content" role="main">
+  <article class="article">
+    <h1 class="article-title"></h1>
     
+    <span class="article-date">0001-01-01</span>
     
-        <nav class="list-item">
-      <a href="https://roland.de-boo.nl/airflow-healthcheck/">Airflow Healthcheck</a>
-      <span class="list-item-date">
-        2019-07-03
-      </span>
-    </nav>
 
+    <div class="article-content">
+      
 
+<h1 id="airflow-healthcheck">Airflow healthcheck</h1>
+
+<p>I&rsquo;ve been running Airflow for some years and in my experience, the scheduler sometimes gets stuck. I haven&rsquo;t figured out why this happens, and to my knowledge, no one else has. This doesn&rsquo;t stop me from using Airflow but the issue needs to be addressed or it will bite you at some point, because your pipelines will stall.</p>
+
+<p>I read the article <a href="https://blog.godatadriven.com/airflow-on-aks">Airflow on AKS</a> this week and it is a good overview of how to deploy Airflow on AKS. However, the final bit describes how the scheduler gets terminated every 5 minutes by chaoskube, which is a bit drastic for my taste. I&rsquo;ve implemented a solution before that reliably reboots the scheduler whenever it fails, not on a regular period.</p>
+
+<h2 id="goal">Goal</h2>
+
+<p>We want to monitor Airflow end-to-end. If you just check the Airflow PID, all you know is that the process is still running. But it could be stuck. So we will monitor two things:</p>
+
+<ul>
+<li>Airflow scheduler is still scheduling tasks</li>
+<li>Those tasks actually get executed and finish successfully</li>
+</ul>
+
+<p>If the task does not finish in time, the scheduler is restarted.</p>
+
+<h2 id="solution-description">Solution description</h2>
+
+<p>The following diagram describes the solution. A DAG is scheduled every 5 minutes. The DAG contains a PythonOperator that stores a heartbeat in the Airflow database. A healthcheck compares the timestamp in the database with the current timestamp, and if the timestamp has not been updated, the scheduler is assumed to be stuck and will be restarted.</p>
+
+<p><img src="airflow_healthcheck.png" alt="airflow_healthcheck.png" /></p>
+
+<p>Note that killing the scheduler may not actually solve the problem if the tasks do not finish for other reasons; such as a lack of compute resources in your namespace. I think the real issue here is that there is no out-of-the-box healthcheck for the scheduler (see <a href="https://issues.apache.org/jira/browse/AIRFLOW-1084">Airflow-1084</a>. But it goes a long way to solving the &lsquo;scheduler is stuck&rsquo; syndrome. Still, I&rsquo;d monitor some metrics (like # of tasks scheduled / completed) and put alerts on that, too.</p>
+
+<h2 id="implementation">Implementation</h2>
+
+<p>The code below is based on two assumptions:</p>
+
+<ul>
+<li>You run Airflow on Kubernetes</li>
+<li>You use Postgres</li>
+</ul>
+
+<p>If this is the case, you can copy this solution literally. But if your Airflow deployment looks different (e.g. a different database) the concept is still valid and you can easily adapt the solution for your needs.</p>
+
+<h3 id="heartbeat-dag-py">heartbeat_dag.py</h3>
+
+<pre><code>from airflow.models import DAG
+from airflow.models import settings
+from airflow.operators.python_operator import PythonOperator
+from datetime import datetime, timedelta
+import logging
+
+&quot;&quot;&quot;
+Updates timestamp in the airflow db, healthcheck table
+&quot;&quot;&quot;
+
+session = settings.Session()
+
+default_args = {
+    'owner': 'ops',
+    'depends_on_past': False,
+    'email': 'roland@de-boo.nl',
+    'email_on_failure': True,
+    'email_on_retry': False,
+    'execution_timeout': timedelta(minutes=1),
+    'retries': 0,
+    'retry_delay': timedelta(minutes=1)
+}
+
+START_DATE = datetime(2019, 1, 1, 0, 30, 0)
+
+dag = DAG('heartbeat_dag',
+          default_args=default_args,
+          schedule_interval='*/5 * * * *',
+          max_active_runs=1,
+          start_date=START_DATE,
+          catchup=False)
+
+def update_timestamp_function(**context):
+    logging.info(&quot;Updating timestamp in healthcheck table&quot;)
+    session.execute(&quot;insert into healthcheck(worker_heartbeat_ts) values (current_timestamp)&quot;)
+    logging.info(&quot;Finished Updating timestamp in healthcheck table&quot;)
+
+update_task = PythonOperator(
+    task_id='update_timestamp',
+    python_callable=update_timestamp_function,
+    provide_context=True,
+    dag=dag
+)
+</code></pre>
+
+<h3 id="healthcheck-py">healthcheck.py</h3>
+
+<p>In Kubernetes you have options to <a href="https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/">define a livenessProbe</a>. It can be a HTTP probe or a command. We will use a command. The logic is placed in this file <code>healthcheck.py</code> which we will periodically execute:</p>
+
+<pre><code>from airflow.models import settings
+from datetime import datetime, timezone
+
+# 10 minutes, the maximum number of seconds that we wait for the liveness task to update value in the database.
+# After this number is reached, kubernetes will kill the scheduler pod.
+max_execution_delay = 600
+session = settings.Session()
+
+result = session.execute(&quot;select max(worker_heartbeat_ts) from healthcheck&quot;).fetchall()
+
+if (len(result)) == 0:
+    raise Exception('No execution_ts found!')
+else:
+    most_recent_ts = dict(result[0])['max']
+
+    delta = datetime.now(timezone.utc) - most_recent_ts
+    print(f'Last execution was {delta.seconds} seconds ago')
+
+    if delta.seconds &gt; max_execution_delay: # 10 minutes
+        raise Exception(f'Last execution was on {most_recent_ts}. This is {delta.seconds} second ago, maximum permitted: {max_execution_delay}!')
+
+</code></pre>
+
+<h3 id="deployment">Deployment</h3>
+
+<p>You will need to deploy these 2 files (the healthcheck and the heartbeat DAG) on on your containers. The easiest way is to just bake them into the docker image.</p>
+
+<h4 id="adding-the-healthcheck-to-kubernetes">Adding the healthcheck to Kubernetes</h4>
+
+<p>We will use a <a href="https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/#define-a-liveness-command">command livenessProbe</a> to execute the healthcheck.</p>
+
+<p>In the Kubernetes manifest that describes the deployment of the scheduler, define the <em>livenessProbe</em>. This is in the container spec (same level as <em>imagePullPolicy</em>).</p>
+
+<pre><code>        livenessProbe:
+          exec:
+            command:
+            - python
+            - /opt/airflow/healthcheck.py
+          failureThreshold: 1
+          initialDelaySeconds: 600
+          periodSeconds: 600
+          successThreshold: 1
+          timeoutSeconds: 20
+</code></pre>
+
+<p>You can play with the numbers, but note that the 600 seconds correspond to <code>max_execution_delay</code> in <code>healthcheck.py</code>.</p>
+
+<h4 id="creating-the-database-table">Creating the database table</h4>
+
+<p>Finally, create the necessary table in PostgreSQL:</p>
+
+<pre><code>CREATE TABLE public.healthcheck (
+	worker_heartbeat_ts timestamptz NULL
+);
+CREATE INDEX healthcheck_index ON public.healthcheck USING btree (worker_heartbeat_ts);
+</code></pre>
+
+<h2 id="verifying-that-it-works">Verifying that it works</h2>
+
+<p>After this has been deployed for a while, you can run <code>kubectl describe pod &lt;airflow scheduler&gt;</code> and you might see something like this:</p>
+
+<pre><code>  Warning  Unhealthy  34m  kubelet, aks-agentpool-56930946-2  Liveness probe failed: [2019-07-01 08:08:44,206] {settings.py:182} INFO - settings.configure_orm(): Using pool settings. pool_size=5, pool_recycle=1800, pid=1812
+Last execution was 787 seconds ago
+Traceback (most recent call last):
+  File &quot;/opt/airflow/healthcheck.py&quot;, line 20, in &lt;module&gt;
+    raise Exception(f'Last execution was on {most_recent_ts}. This is {delta.seconds} second ago, maximum permitted: {max_execution_delay}!')
+Exception: Last execution was on 2019-07-01 07:55:39.457244+00:00. This is 787 second ago, maximum permitted: 600!
+  Normal  Killing  33m (x225 over 3d19h)  kubelet, aks-agentpool-56930946-2  Killing container with id docker://airflow-scheduler:Container failed liveness probe.. Container will be killed and recreated.
+</code></pre>
+
+<p>This means that Kubernetes has restarted the scheduler.</p>
+
+<p>And that is it! Since we have deployed this mechanism, Airflow has been restarted every now and then, but we haven&rsquo;t seen big issues. And while I partly feel that we should maybe dive deeper into <em>why</em> the scheduler gets stuck, it is also a dirty secret of our industry that most systems benefit from periodic rebooting :)</p>
+
+    </div>
+ 
+    <ul class="article-taxonomy">
+      
     
-        
-  <h2 class="list-title">2018</h2>
-    
-    
-        <nav class="list-item">
-      <a href="https://roland.de-boo.nl/infrastructure-for-deep-learning/">Infrastructure for Deep Learning</a>
-      <span class="list-item-date">
-        2018-09-08
-      </span>
-    </nav>
-
-
-    
-    
-        <nav class="list-item">
-      <a href="https://roland.de-boo.nl/airflow-on-kubernetes/">Airflow on Kubernetes</a>
-      <span class="list-item-date">
-        2018-04-18
-      </span>
-    </nav>
-
-
-    
-        
-  <h2 class="list-title">2016</h2>
-    
-    
-        <nav class="list-item">
-      <a href="https://roland.de-boo.nl/exposing-build-metadata-in-your-dropwizard-webservice/">Exposing build metadata in your Dropwizard webservice</a>
-      <span class="list-item-date">
-        2016-08-04
-      </span>
-    </nav>
-
-
-    
-    
-  </div>  
-
-  
-
-
+      
+  </article>
 
 </main>
 
