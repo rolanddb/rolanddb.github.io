@@ -49,15 +49,5 @@ Here I write down what I&amp;rsquo;ve found, in the hope that it is helpful to o
       <description>Exposing metadata from the jar manifest in Web Service In my current job we develop as a continuous delivery process - meaning every build is a artifact that can potentially be deployed to production. Therefore we do not version our software anymore - we stick to the snapshots. The question arises - how do we keep track of what is deployed to production? Deployment happens a lot (i.e. daily), so doing this manually is cumbersome and prone to errors.</description>
     </item>
     
-    <item>
-      <title></title>
-      <link>https://roland.de-boo.nl/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>https://roland.de-boo.nl/</guid>
-      <description>Airflow healthcheck I&amp;rsquo;ve been running Airflow for some years and in my experience, the scheduler sometimes gets stuck. I haven&amp;rsquo;t figured out why this happens, and to my knowledge, no one else has. This doesn&amp;rsquo;t stop me from using Airflow but the issue needs to be addressed or it will bite you at some point, because your pipelines will stall.
-I read the article Airflow on AKS this week and it is a good overview of how to deploy Airflow on AKS.</description>
-    </item>
-    
   </channel>
 </rss>
