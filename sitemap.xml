@@ -4,37 +4,48 @@
   
   <url>
     <loc>https://roland.de-boo.nl/tags/airflow/</loc>
-    <lastmod>2019-07-03T09:19:46+02:00</lastmod>
+    <lastmod>2019-10-06T13:03:07+02:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://roland.de-boo.nl/debugging-airflow-with-pyspy/</loc>
+    <lastmod>2019-10-06T13:03:07+02:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://roland.de-boo.nl/tags/kubernetes/</loc>
+    <lastmod>2019-10-06T13:03:07+02:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://roland.de-boo.nl/post/</loc>
+    <lastmod>2019-10-06T13:03:07+02:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://roland.de-boo.nl/tags/python/</loc>
+    <lastmod>2019-10-06T13:03:07+02:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://roland.de-boo.nl/</loc>
+    <lastmod>2019-10-06T13:03:07+02:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://roland.de-boo.nl/tags/</loc>
+    <lastmod>2019-10-06T13:03:07+02:00</lastmod>
     <priority>0</priority>
   </url>
   
   <url>
     <loc>https://roland.de-boo.nl/airflow-healthcheck/</loc>
     <lastmod>2019-07-03T09:19:46+02:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>https://roland.de-boo.nl/tags/kubernetes/</loc>
-    <lastmod>2019-07-03T09:19:46+02:00</lastmod>
-    <priority>0</priority>
-  </url>
-  
-  <url>
-    <loc>https://roland.de-boo.nl/post/</loc>
-    <lastmod>2019-07-03T09:19:46+02:00</lastmod>
-    <priority>0</priority>
-  </url>
-  
-  <url>
-    <loc>https://roland.de-boo.nl/</loc>
-    <lastmod>2019-07-03T09:19:46+02:00</lastmod>
-    <priority>0</priority>
-  </url>
-  
-  <url>
-    <loc>https://roland.de-boo.nl/tags/</loc>
-    <lastmod>2019-07-03T09:19:46+02:00</lastmod>
-    <priority>0</priority>
   </url>
   
   <url>

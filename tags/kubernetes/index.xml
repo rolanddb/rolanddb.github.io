@@ -6,10 +6,19 @@
     <description>Recent content in Kubernetes on Roland de Boo</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Wed, 03 Jul 2019 09:19:46 +0200</lastBuildDate>
+    <lastBuildDate>Sun, 06 Oct 2019 13:03:07 +0200</lastBuildDate>
     
 	<atom:link href="https://roland.de-boo.nl/tags/kubernetes/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Debugging Airflow With Pyspy</title>
+      <link>https://roland.de-boo.nl/debugging-airflow-with-pyspy/</link>
+      <pubDate>Sun, 06 Oct 2019 13:03:07 +0200</pubDate>
+      
+      <guid>https://roland.de-boo.nl/debugging-airflow-with-pyspy/</guid>
+      <description>Recently we were running into the problem that our Airflow server got &amp;ldquo;stuck&amp;rdquo; - it just stopped doing anything, without any logging, errors, or weird CPU or memory usage. A restart resolved the issue, and we have healthchecks in place that detect these forms of stalling and automatically restart the scheduler. But since the issue occurred multiple times in a short time period, I figured that this was a good time to do a deep dive, since normally these issues are hard to reproduce.</description>
+    </item>
     
     <item>
       <title>Airflow Healthcheck</title>

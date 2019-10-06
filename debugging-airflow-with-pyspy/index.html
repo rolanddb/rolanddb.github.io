@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-125458715-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-125458715-1');
+</script>
+
+      
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Hugo 0.55.6" />
+
+
+<title>Debugging Airflow With Pyspy - Roland de Boo</title>
+<meta property="og:title" content="Debugging Airflow With Pyspy - Roland de Boo">
+
+
+
+  
+
+
+
+
+
+
+
+<link rel="stylesheet" href="https://roland.de-boo.nl/css/main.css" media="all">
+<link rel="stylesheet" href="https://roland.de-boo.nl/css/fonts.css">
+
+  </head>
+  <body>
+    <div class="wrapper">
+      <header class="header">
+        <nav class="nav">
+  <a href="https://roland.de-boo.nl/" class="nav-logo">
+    <img src="https://roland.de-boo.nl/images/logo.png" 
+         width="50" 
+         height="50" 
+         alt="Logo">
+  </a>
+
+  <ul class="nav-links">
+    
+    <li><a href="/tags">Tags</a></li>
+    
+    <li><a href="/about/">About</a></li>
+    
+  </ul>
+</nav>
+
+      </header>
+
+
+<main class="content" role="main">
+  <article class="article">
+    <h1 class="article-title">Debugging Airflow With Pyspy</h1>
+    
+    <span class="article-date">2019-10-06</span>
+    
+
+    <div class="article-content">
+      
+
+<p>Recently we were running into the problem that our Airflow server got &ldquo;stuck&rdquo; - it just stopped doing anything, without any logging, errors, or weird CPU or memory usage. A restart resolved the issue, and we have healthchecks in place that detect these forms of stalling and automatically restart the scheduler. But since the issue occurred multiple times in a short time period, I figured that this was a good time to do a deep dive, since normally these issues are hard to reproduce.</p>
+
+<p>I got into contact with @ash on Slack who recommended to try using <a href="https://github.com/benfred/py-spy">py-spy</a>.</p>
+
+<h2 id="what-py-spy-does">What py-spy does</h2>
+
+<p>Py-spy is a sample profiler, meaning that it looks at what the python program is doing: at which lines in which file is the CPU spending its time? This can give you an indication of why a program may be slow or even grinding to a halt.</p>
+
+<p>Py-spy can be attached to a running process, without needing to change the configuration of the process or restarting it.</p>
+
+<h2 id="enabling-py-spy-on-kubernetes">Enabling py-spy on kubernetes</h2>
+
+<p>Since we were running Airflow on Kubernetes, I had to install py-spy in our Docker container. I just added it to the Dockerfile, and build a new image.</p>
+
+<p>Also, some configuration is needed because the default security settings do not allow py-spy. Specifically, in the deployment manifest, under <code>Deployment.spec.template.spec.containers</code> you need to add:</p>
+
+<pre><code>securityContext:
+  capabilities:
+    add:
+    - SYS_PTRACE
+</code></pre>
+
+<p>(<a href="https://github.com/benfred/py-spy/issues/8">source</a>)</p>
+
+<h2 id="profiling-a-process">Profiling a process</h2>
+
+<p>With this configuration in place I was ready to dive into the issue. After some time I got the notification in the UI: <code>The scheduler does not appear to be running. Last heartbeat was received 9 minutes ago.
+The DAGs list may not update, and new tasks will not be scheduled.
+</code></p>
+
+<p>You can now exec into the pod (<code>kubeclt exec -ti &lt;pod&gt; bash</code>) and run py-spy. Py-spy attaches to a process ID, and since the main process in a Docker container is <code>1</code>, we can just run <code>py-spy --pid 1</code>. (Note that Airflow actually runs multiple processes in a single pod. You can find the other process IDs with <code>ps -ef</code>.)</p>
+
+<p>This will give you an output such as this:</p>
+
+<pre><code>  Collecting samples from 'pid: 1' (python v3.6.9)
+  Total Samples 43994
+  GIL: 0.00%, Active: 100.00%, Threads: 1
+
+  %Own   %Total  OwnTime  TotalTime  Function (filename:line)
+ 100.00% 100.00%   38.00s    38.00s   recv_into (OpenSSL/SSL.py:1821)
+  0.00% 100.00%   0.000s    38.00s   sync (airflow/contrib/executors/kubernetes_executor.py:795)
+  0.00% 100.00%   0.000s    38.00s   request_encode_body (urllib3/request.py:150)
+  0.00% 100.00%   0.000s    38.00s   begin (http/client.py:307)
+  0.00% 100.00%   0.000s    38.00s   recv_into (urllib3/contrib/pyopenssl.py:304)
+  0.00% 100.00%   0.000s    38.00s   wrapper (airflow/utils/cli.py:74)
+  0.00% 100.00%   0.000s    38.00s   create_namespaced_pod_with_http_info (kubernetes/client/apis/core_v1_api.py:6206)
+  0.00% 100.00%   0.000s    38.00s   _make_request (urllib3/connectionpool.py:383)
+  0.00% 100.00%   0.000s    38.00s   _execute_helper (airflow/jobs/scheduler_job.py:1412)
+
+</code></pre>
+
+<p>From this trace we learn that the process is stuck polling for the state of the Pod (running the task that was launched).</p>
+
+<h2 id="debugging-the-issue-further">Debugging the issue further</h2>
+
+<p>To see which HTTP calls are causing the problem, I added some extra logging to <code>cli.py</code>:</p>
+
+<pre><code># added for debugging scheduler
+import http.client; http.client.HTTPConnection.debuglevel = 1
+import logging
+logging.basicConfig() # you need to initialize logging, otherwise you will not see anything from requests
+logging.getLogger().setLevel(logging.DEBUG)
+requests_log = logging.getLogger(&quot;urllib3&quot;)
+requests_log.setLevel(logging.DEBUG)
+requests_log.propagate = True
+
+</code></pre>
+
+<p>These two lines enable debugging at httplib level (requests-&gt;urllib3-&gt;http.client).
+You will see the HTTP request, including heades are data. You will also see the reponse, including headers (but without data).</p>
+
+<p>I build a new container with this debug logging, and collected some logs. I then searched for the process that was causing the issues (<code>pod_launcher</code>):</p>
+
+<pre><code>(base) macbook:~ roland$ kubectl logs airflow-scheduler-7c5d6df8f4-w4tpn &gt; logs.txt
+(base) macbook:~ roland$ cat logs.txt | grep pod_launcher.py
+[2019-08-20 14:40:10,471] {pod_launcher.py:60} DEBUG - Pod Creation Request:
+[2019-08-20 14:40:10,652] {pod_launcher.py:63} DEBUG - Pod Creation Response: {'api_version': 'v1',
+[2019-08-20 14:43:03,213] {pod_launcher.py:60} DEBUG - Pod Creation Request:
+[2019-08-20 14:43:03,296] {pod_launcher.py:63} DEBUG - Pod Creation Response: {'api_version': 'v1',
+[2019-08-20 14:44:38,078] {pod_launcher.py:60} DEBUG - Pod Creation Request:
+[2019-08-20 14:44:38,409] {pod_launcher.py:63} DEBUG - Pod Creation Response: {'api_version': 'v1',
+[2019-08-20 14:44:39,804] {pod_launcher.py:60} DEBUG - Pod Creation Request:
+[2019-08-20 14:44:39,867] {pod_launcher.py:63} DEBUG - Pod Creation Response: {'api_version': 'v1',
+[2019-08-20 14:45:21,785] {pod_launcher.py:60} DEBUG - Pod Creation Request:
+[2019-08-20 14:45:22,040] {pod_launcher.py:63} DEBUG - Pod Creation Response: {'api_version': 'v1',
+[2019-08-20 14:50:22,224] {pod_launcher.py:60} DEBUG - Pod Creation Request:
+</code></pre>
+
+<p>This is all traffic to the Kubernetes API for creating pods. We can see that the final request at <code>14:50:22,224</code> doesn&rsquo;t get a response. At that point, the Airflow scheduler hangs. At this point, I could dive into the Airflow source code. It turned out that theere is no timeout on this API call.</p>
+
+<h2 id="fixing-the-issue">Fixing the issue</h2>
+
+<p>First I configured a timeout on urllib3. This causes the scheduler to exit when a timeout is occurring. Instead of deadly silence, I could now observe obvious errors like this:</p>
+
+<pre><code>  File &quot;/usr/local/lib/python3.6/site-packages/urllib3/connectionpool.py&quot;, line 307, in _raise_timeout
+    raise ReadTimeoutError(self, url, &quot;Read timed out. (read timeout=%s)&quot; % timeout_value)
+urllib3.exceptions.ReadTimeoutError: HTTPSConnectionPool(host='rg-akscode-platform-a-101-1ba9537e.hcp.westeurope.azmk8s.io', port=443): Read timed out. (read timeout=9.99950340400028)
+[2019-08-20 15:25:20,241] {helpers.py:319} INFO - Sending Signals.SIGTERM to GPID 41
+[2019-08-20 15:25:20,598] {settings.py:238} DEBUG - Disposing DB connection pool (PID 5578)
+[2019-08-20 15:25:20,661] {settings.py:238} DEBUG - Disposing DB connection pool (PID 5576)
+[2019-08-20 15:25:20,695] {helpers.py:297} INFO - Process psutil.Process(pid=5578, status='terminated') (5578) terminated with exit code None
+[2019-08-20 15:25:20,696] {helpers.py:297} INFO - Process psutil.Process(pid=41, status='terminated') (41) terminated with exit code 0
+[2019-08-20 15:25:20,696] {helpers.py:297} INFO - Process psutil.Process(pid=5576, status='terminated') (5576) terminated with exit code None
+[2019-08-20 15:25:20,696] {scheduler_job.py:1328} INFO - Exited execute loop
+[2019-08-20 15:25:20,719] {cli_action_loggers.py:82} DEBUG - Calling callbacks: []
+[2019-08-20 15:25:20,719] {settings.py:238} DEBUG - Disposing DB connection pool (PID 1)
+</code></pre>
+
+<p>A crashing process is slightly better than a process that hangs. But not ideal. Therefore I added a <code>try-except</code> in the KubernetesExectutor that puts the task back on the internal queue, so it will be retried.</p>
+
+<p>I created a ticket on the Airflow JIRA <a href="https://issues.apache.org/jira/browse/AIRFLOW-5282">(AIRFLOW-5282)</a>, created a <a href="https://github.com/apache/airflow/pull/5880">pull request</a>, and resolved the issue. This has made Airflow more stable when you run on Kubernetes. Thanks for @ash for helping with the analysis.</p>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>Py-spy is a very handy tool to keep in mind if you are running into issues with python programs and you have no logging output. Since it is not intrusive, it is safe to use in production. This may allow you to debug difficult issues.</p>
+
+    </div>
+ 
+    <ul class="article-taxonomy">
+      
+    
+      
+      <li>
+        <i class="fa fa-tags"></i><a href="/tags/airflow">Airflow</a><a href="/tags/python">Python</a><a href="/tags/kubernetes">Kubernetes</a>
+      </li>
+      
+  </article>
+
+</main>
+
+      <footer class="footer">
+        <ul class="footer-links">
+          <li>
+            <a href="https://roland.de-boo.nl/index.xml" type="application/rss+xml" target="_blank"><i class="fa fa-rss"></i> RSS feed</a>
+          </li>
+          <li>
+            <a href="https://github.com/mobybit/hugo-natrium-theme"><i class="fa fa-github"></i> Code</a>
+          </li>
+          <li>
+            <a href="https://roland.de-boo.nl/site-notice">Site notice</a>
+          </li>
+        </ul>
+      </footer>
+
+    </div>
+
+  </body>
+</html>
+
