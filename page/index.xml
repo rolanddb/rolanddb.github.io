@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Pages on Roland de Boo</title>
+    <link>https://roland.de-boo.nl/page/</link>
+    <description>Recent content in Pages on Roland de Boo</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sat, 08 Sep 2018 16:46:54 +0200</lastBuildDate>
+    
+	<atom:link href="https://roland.de-boo.nl/page/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>About</title>
+      <link>https://roland.de-boo.nl/about/</link>
+      <pubDate>Sat, 08 Sep 2018 16:46:54 +0200</pubDate>
+      
+      <guid>https://roland.de-boo.nl/about/</guid>
+      <description>I am software engineer from Rotterdam, the Netherlands. My expertise is in backend software, particulary around data-intensive applications.
+Specialties:
+ Data Engineering Containerization / Kubernetes / Cloud Native apps AWS / Azure DevOps, Infrastructure as Code Python / Java  I work as a freelancer/contractor.
+ GitHub: https://github.com/rolanddb LinkedIn: https://nl.linkedin.com/in/rolanddeboo  Email: roland at giraffesoftware dot nl</description>
+    </item>
+    
+  </channel>
+</rss>
