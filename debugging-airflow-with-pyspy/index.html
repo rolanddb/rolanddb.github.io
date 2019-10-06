@@ -91,6 +91,8 @@
 
 <p>(<a href="https://github.com/benfred/py-spy/issues/8">source</a>)</p>
 
+<p>So in this case, I actually had to change some configuration. But that is because Docker containers are immutable - we can&rsquo;t change the specification for a running process. This has nothing to do with py-spy. If we were running on a plain VM or server, you can just install py-spy next to your python program while running and start profiling.</p>
+
 <h2 id="profiling-a-process">Profiling a process</h2>
 
 <p>With this configuration in place I was ready to dive into the issue. After some time I got the notification in the UI: <code>The scheduler does not appear to be running. Last heartbeat was received 9 minutes ago.
